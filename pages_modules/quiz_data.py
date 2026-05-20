@@ -247,7 +247,7 @@ QUIZ_DATA = {
         {"q": "What does len(set([1,1,2,3])) give?", "options": ["4", "3", "2", "1"], "correct": 1},
         {"q": "What does [1,2,3][::-1] give?", "options": ["[1,2,3]", "[3,2,1]", "[1,3]", "Error"], "correct": 1},
         {"q": "What does enumerate(['a']) yield first?", "options": ["(0,'a')", "('a',0)", "(1,'a')", "'a'"], "correct": 0},
-    ]}
+    ]},
     21: {"topic": "Dictionaries — Advanced", "questions": [
         {"q": "What does d.items() return?", "options": ["Keys only", "Key-value pairs", "Values only", "Length"],
          "correct": 1},
