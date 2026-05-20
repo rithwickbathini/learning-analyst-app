@@ -1,0 +1,11 @@
+course_id,title,category,instructor,price,enrolled_students,rating,duration_hours,completion_rate
+C001,Python for Beginners,Programming,Sarah Chen,49.99,1240,4.7,12,68
+C002,Machine Learning Fundamentals,Data Science,Marcus Lee,79.99,890,4.8,18,54
+C003,Web Development with React,Programming,Priya Sharma,59.99,1560,4.6,15,71
+C004,Data Visualization with Python,Data Science,Sarah Chen,39.99,720,4.5,8,82
+C005,Deep Learning with PyTorch,Data Science,Marcus Lee,99.99,450,4.9,22,41
+C006,Business Analytics 101,Business,Ahmed Patel,44.99,980,4.4,10,75
+C007,SQL Mastery,Programming,Priya Sharma,34.99,1340,4.7,9,79
+C008,Statistics for Data Science,Data Science,Marcus Lee,54.99,610,4.6,14,63
+C009,Excel for Professionals,Business,Ahmed Patel,29.99,2100,4.3,6,88
+C010,Cloud Computing Basics,Programming,Sarah Chen,64.99,540,4.5,16,57
