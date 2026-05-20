@@ -1,7 +1,7 @@
 """Main entry — handles auth, then routes by user role."""
 import streamlit as st
 
-from pages_modules import dashboard, courses, progress, upload_data, auth_page, admin, lessons
+from pages_modules import dashboard, courses, progress, upload_data, auth_page, admin, lessons, quiz
 from utils.auth import is_authenticated, logout_user, current_role
 
 st.set_page_config(
@@ -27,9 +27,9 @@ with st.sidebar:
 
     # Students and admins see different menus
     if role == "admin":
-        options = ["📊 Dashboard", "📚 Courses", "🎥 Lessons", "🎯 Progress", "📤 Upload Data", "🛠️ Admin Panel"]
+        options = ["📊 Dashboard", "📚 Courses", "🎥 Lessons", "📝 Quizzes", "🎯 Progress", "📤 Upload Data", "🛠️ Admin Panel"]
     else:
-        options = ["📊 Dashboard", "📚 Courses", "🎥 Lessons", "🎯 Progress"]
+        options = ["📊 Dashboard", "📚 Courses", "🎥 Lessons", "📝 Quizzes", "🎯 Progress"]
 
     page = st.radio("Navigate", options, label_visibility="collapsed")
 
@@ -45,6 +45,8 @@ elif page == "📚 Courses":
     courses.render()
 elif page == "🎥 Lessons":
     lessons.render()
+elif page == "📝 Quizzes":
+    quiz.render()
 elif page == "🎯 Progress":
     progress.render()
 elif page == "📤 Upload Data":
