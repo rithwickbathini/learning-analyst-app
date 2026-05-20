@@ -1,34 +1,26 @@
-"""Admin-only page: manage users and view system info."""
-import json
-
+"""Admin-only page: manage users from the database."""
 import streamlit as st
 
-from utils.auth import USERS_FILE
+from utils.db import get_db
 from utils.ui_helpers import section_header
 
 
 def render():
     section_header("🛠️ Admin Panel", "Manage users and platform settings")
 
-    # Load users to display (without showing password hashes)
-    if USERS_FILE.exists():
-        with open(USERS_FILE) as f:
-            users = json.load(f)
-    else:
-        users = {}
+    db = get_db()
+    if db is None:
+        st.error("Database not configured.")
+        return
+
+    users = db.table("users").select("email, name, role, created_at").execute().data
 
     c1, c2 = st.columns(2)
     c1.metric("Total Users", len(users))
-    c2.metric("Admins", sum(1 for u in users.values() if u["role"] == "admin"))
+    c2.metric("Admins", sum(1 for u in users if u["role"] == "admin"))
 
     st.markdown("#### Registered Users")
-    rows = [
-        {"Email": email, "Name": data["name"], "Role": data["role"]}
-        for email, data in users.items()
-    ]
-    if rows:
-        st.dataframe(rows, use_container_width=True, hide_index=True)
+    if users:
+        st.dataframe(users, use_container_width=True, hide_index=True)
     else:
         st.info("No users registered yet.")
-
-    st.info("This is an admin-only area. Students cannot see this page.")

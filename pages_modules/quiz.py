@@ -1,89 +1,80 @@
-"""Quiz page: multiple-choice Python quizzes with scoring."""
+"""90-day quiz engine. Reads questions from quiz_data.py."""
 import streamlit as st
 
+from pages_modules.quiz_data import QUIZ_DATA
 from utils.ui_helpers import section_header
 
-# Quiz bank. Each quiz has a title and a list of questions.
-# Each question: the prompt, the options, and the index of the correct option.
-QUIZZES = {
-    "Python Basics": [
-        {
-            "question": "Which keyword defines a function in Python?",
-            "options": ["func", "def", "function", "define"],
-            "correct": 1,
-        },
-        {
-            "question": "What data type is the result of: 3 / 2 ?",
-            "options": ["int", "float", "string", "bool"],
-            "correct": 1,
-        },
-        {
-            "question": "How do you start a comment in Python?",
-            "options": ["//", "<!--", "#", "/*"],
-            "correct": 2,
-        },
-        {
-            "question": "Which of these is a valid list?",
-            "options": ["{1, 2, 3}", "(1, 2, 3)", "[1, 2, 3]", "<1, 2, 3>"],
-            "correct": 2,
-        },
-    ],
-    "Data Structures": [
-        {
-            "question": "Which structure stores key-value pairs?",
-            "options": ["list", "tuple", "set", "dictionary"],
-            "correct": 3,
-        },
-        {
-            "question": "Which structure does NOT allow duplicate values?",
-            "options": ["list", "set", "tuple", "string"],
-            "correct": 1,
-        },
-        {
-            "question": "Tuples in Python are:",
-            "options": ["mutable", "immutable", "always empty", "key-value pairs"],
-            "correct": 1,
-        },
-    ],
-}
+# Import DB + auth, but degrade gracefully if not set up
+try:
+    from utils.db import get_db
+    from utils.auth import current_email
+    _DB_AVAILABLE = True
+except Exception:
+    _DB_AVAILABLE = False
 
 
 def render():
-    section_header("📝 Quizzes", "Test your knowledge")
+    section_header("📝 90-Day Quiz Challenge", "10 questions a day, basic to expert")
 
-    # Pick a quiz
-    quiz_name = st.selectbox("Choose a quiz", list(QUIZZES.keys()))
-    questions = QUIZZES[quiz_name]
+    total_days = 90
+    available_days = sorted(QUIZ_DATA.keys())
 
-    st.caption(f"{len(questions)} questions • Choose one answer each")
+    st.caption(f"{len(available_days)} of {total_days} days available so far. More added regularly.")
+
+    # Day picker — show all 90, mark which are ready
+    day = st.selectbox(
+        "Choose a day",
+        range(1, total_days + 1),
+        format_func=lambda d: f"Day {d}" + ("" if d in QUIZ_DATA else " — coming soon"),
+    )
+
+    if day not in QUIZ_DATA:
+        st.info(f"Day {day} hasn't been added yet. Pick a day marked as available.")
+        return
+
+    quiz = QUIZ_DATA[day]
+    questions = quiz["questions"]
+    st.markdown(f"#### Day {day}: {quiz['topic']}")
+    st.caption(f"{len(questions)} questions • Pass mark: 70%")
     st.divider()
 
-    # Collect answers. We use a unique key per question so Streamlit tracks them.
     user_answers = []
     for i, q in enumerate(questions):
-        st.markdown(f"**Q{i + 1}. {q['question']}**")
+        st.markdown(f"**Q{i + 1}. {q['q']}**")
         choice = st.radio(
             "Select your answer",
             options=list(range(len(q["options"]))),
             format_func=lambda idx, opts=q["options"]: opts[idx],
-            key=f"{quiz_name}_q{i}",
-            index=None,  # no pre-selected answer
+            key=f"day{day}_q{i}",
+            index=None,
             label_visibility="collapsed",
         )
         user_answers.append(choice)
         st.markdown("")
 
-    # Submit and score
     if st.button("Submit Quiz", type="primary"):
         if None in user_answers:
             st.warning("Please answer all questions before submitting.")
             return
 
-        score = sum(
-            1 for i, q in enumerate(questions) if user_answers[i] == q["correct"]
-        )
+        score = sum(1 for i, q in enumerate(questions) if user_answers[i] == q["correct"])
         total = len(questions)
         percentage = round(score / total * 100)
+
+        # Save to database if available
+        if _DB_AVAILABLE:
+            db = get_db()
+            if db is not None:
+                try:
+                    db.table("quiz_scores").insert({
+                        "user_email": current_email(),
+                        "quiz_name": f"Day {day}: {quiz['topic']}",
+                        "score": score,
+                        "total": total,
+                        "percentage": percentage,
+                    }).execute()
+                except Exception:
+                    pass  # Don't break the quiz if saving fails
 
         st.divider()
         st.markdown("### Results")
@@ -95,9 +86,8 @@ def render():
             st.success(f"🎉 Passed! You scored {percentage}%.")
             st.balloons()
         else:
-            st.error(f"You scored {percentage}%. Try again to reach 70%.")
+            st.error(f"You scored {percentage}%. Review and try again to reach 70%.")
 
-        # Show which answers were right/wrong
         st.markdown("#### Review")
         for i, q in enumerate(questions):
             correct_text = q["options"][q["correct"]]
@@ -105,6 +95,4 @@ def render():
             if user_answers[i] == q["correct"]:
                 st.markdown(f"✅ **Q{i + 1}**: {chosen_text}")
             else:
-                st.markdown(
-                    f"❌ **Q{i + 1}**: You chose *{chosen_text}* — correct answer: **{correct_text}**"
-                )
+                st.markdown(f"❌ **Q{i + 1}**: You chose *{chosen_text}* — correct: **{correct_text}**")
