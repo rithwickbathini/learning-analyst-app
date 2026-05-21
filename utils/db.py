@@ -2,24 +2,36 @@
 import os
 
 import streamlit as st
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
 @st.cache_resource
 def get_db():
-    """Create and cache a single Supabase client for the whole app."""
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
+    url = None
+    key = None
 
-    # On Streamlit Cloud, secrets come from st.secrets instead of .env
-    if not url and hasattr(st, "secrets"):
-        url = st.secrets.get("SUPABASE_URL")
-        key = st.secrets.get("SUPABASE_KEY")
+    # 1) Streamlit Cloud secrets
+    try:
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_KEY"]
+    except Exception:
+        pass
+
+    # 2) Local .env fallback
+    if not url or not key:
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+            url = os.getenv("SUPABASE_URL")
+            key = os.getenv("SUPABASE_KEY")
+        except Exception:
+            pass
 
     if not url or not key:
         return None
 
-    from supabase import create_client
-    return create_client(url, key)
+    try:
+        from supabase import create_client
+        return create_client(url, key)
+    except Exception as e:
+        st.error(f"Supabase connection failed: {e}")
+        return None
