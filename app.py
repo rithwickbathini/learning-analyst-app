@@ -36,14 +36,15 @@ from pages_modules import (
     home,
     dashboard,
     courses,
-    progress,
-    upload_data,
-    auth_page,
-    admin,
+    servicenow,  # Added missing import to match the menu options
     lessons,
     quiz,
     my_scores,
-    ai_tutor
+    progress,
+    upload_data,
+    admin,
+    ai_tutor,
+    auth_page
 )
 
 # ---------------- IMPORT AUTH ----------------
@@ -65,47 +66,61 @@ if not is_authenticated():
 # ---------------- USER ROLE ----------------
 role = current_role()
 
-# ---------------- SIDEBAR ----------------
+# ---------------- NAVIGATION STATE MANAGEMENT ----------------
+# Handle inter-page programmatic redirection (e.g., clicking a button on Home to go to Courses)
+if "go_to" in st.session_state:
+    st.session_state.current_page = st.session_state.pop("go_to")
+
+# Fallback initializer if session state is entirely blank
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "🏠 Home"
+
+# ---------------- DETERMINE MENUS BY ROLE ----------------
+if role == "admin":
+    options = [
+        "🏠 Home",
+        "📊 Dashboard",
+        "📚 Courses",
+        "🧩 ServiceNow",
+        "🎥 Lessons",
+        "📝 Quizzes",
+        "📈 My Scores",
+        "🎯 Progress",
+        "📤 Upload Data",
+        "🛠️ Admin Panel",
+        "🤖 AI Tutor",
+    ]
+else:
+    options = [
+        "🏠 Home",
+        "📊 Dashboard",
+        "📚 Courses",
+        "🧩 ServiceNow",
+        "🎥 Lessons",
+        "📝 Quizzes",
+        "📈 My Scores",
+        "🎯 Progress",
+        "🤖 AI Tutor",
+    ]
+
+# Guard against role switching edge-cases causing IndexErrors
+if st.session_state.current_page not in options:
+    st.session_state.current_page = "🏠 Home"
+
+# ---------------- SIDEBAR INTERFACE ----------------
 with st.sidebar:
     st.title("🎓 LEARNING PLATFORM")
-
     st.caption(f"Welcome, {st.session_state.get('user_name', 'User')}")
     st.caption(f"Role: {role.capitalize()}")
-
     st.divider()
 
-    # ---------------- ADMIN MENU ----------------
-    if role == "admin":
-        options = [
-            "🏠 Home",
-            "📊 Dashboard",
-            "📚 Courses",
-            "🎥 Lessons",
-            "📝 Quizzes",
-            "📈 My Scores",
-            "🎯 Progress",
-            "📤 Upload Data",
-            "🛠️ Admin Panel",
-            "🤖 AI Tutor",
-        ]
-
-    # ---------------- STUDENT MENU ----------------
-    else:
-        options = [
-            "🏠 Home",
-            "📊 Dashboard",
-            "📚 Courses",
-            "🎥 Lessons",
-            "📝 Quizzes",
-            "📈 My Scores",
-            "🎯 Progress",
-            "🤖 AI Tutor",
-        ]
-
+    # Tied directly to st.session_state["current_page"]
     page = st.radio(
         "Navigate",
         options,
+        index=options.index(st.session_state.current_page),
         label_visibility="collapsed",
+        key="current_page"
     )
 
     st.divider()
@@ -116,7 +131,7 @@ with st.sidebar:
         logout_user()
         st.rerun()
 
-# ---------------- ROUTING ----------------
+# ---------------- ROUTING ENGINE ----------------
 if page == "🏠 Home":
     home.render()
 
@@ -125,6 +140,9 @@ elif page == "📊 Dashboard":
 
 elif page == "📚 Courses":
     courses.render()
+
+elif page == "🧩 ServiceNow":
+    servicenow.render()
 
 elif page == "🎥 Lessons":
     lessons.render()
@@ -139,17 +157,20 @@ elif page == "🎯 Progress":
     progress.render()
 
 elif page == "📤 Upload Data":
-    upload_data.render()
-
-elif page == "🤖 AI Tutor":
-    with st.spinner("Loading AI Tutor..."):
-        ai_tutor.render()
+    if role == "admin":
+        upload_data.render()
+    else:
+        st.error("Access denied. Admins only.")
 
 elif page == "🛠️ Admin Panel":
     if role == "admin":
         admin.render()
     else:
         st.error("Access denied. Admins only.")
+
+elif page == "🤖 AI Tutor":
+    with st.spinner("Loading AI Tutor..."):
+        ai_tutor.render()
 
 # ---------------- FOOTER ----------------
 st.markdown("---")

@@ -1,15 +1,19 @@
 """Dashboard page: KPIs and analytics."""
 
-import streamlit as st
 import pandas as pd
 import plotly.express as px
-
+import streamlit as st
 from utils.data_loader import get_active_data
 from utils.ui_helpers import section_header
 
 
-def render():
+@st.cache_data(ttl=600)  # Caches dashboard calculations for 10 minutes
+def load_dashboard_data():
+    """Fetches base data from the data loader and caches it."""
+    return get_active_data()
 
+
+def render():
     # ---------------- HEADER ----------------
     section_header(
         "📊 Dashboard",
@@ -17,8 +21,8 @@ def render():
     )
 
     # ---------------- LOAD DATA ----------------
-    with st.spinner("Loading dashboard..."):
-        df = get_active_data()
+    # Cached loading ensures super fast UI rendering on user reruns
+    df = load_dashboard_data()
 
     # ---------------- SAFETY CHECK ----------------
     if df is None or df.empty:
@@ -27,11 +31,7 @@ def render():
 
     # ---------------- KPI CALCULATIONS ----------------
     total_students = int(df["enrolled_students"].sum())
-
-    total_revenue = (
-        df["enrolled_students"] * df["price"]
-    ).sum()
-
+    total_revenue = (df["enrolled_students"] * df["price"]).sum()
     avg_rating = df["rating"].mean()
     avg_completion = df["completion_rate"].mean()
 
@@ -71,19 +71,20 @@ def render():
     # ---------------- WEEKLY ACTIVITY LINE CHART ----------------
     st.subheader("📅 Weekly Study Activity")
 
-    activity_df = pd.DataFrame({
-        "Day": ["Mon", "Tue", "Wed", "Thu", "Fri"],
-        "Hours": [2, 3, 1, 4, 5],
-    })
+    activity_df = pd.DataFrame(
+        {
+            "Day": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+            "Hours": [2, 3, 1, 4, 5],
+        }
+    )
 
     fig1 = px.line(
         activity_df,
         x="Day",
         y="Hours",
         markers=True,
-        title="Study Hours Trend"
+        title="Study Hours Trend",
     )
-
     st.plotly_chart(fig1, use_container_width=True)
 
     st.divider()
@@ -93,13 +94,12 @@ def render():
 
     # ---------- BAR CHART ----------
     with col1:
-
         st.subheader("📚 Enrollments by Category")
 
-        cat_df = df.groupby(
-            "category",
-            as_index=False
-        )["enrolled_students"].sum()
+        cat_df = (
+            df.groupby("category", as_index=False)["enrolled_students"]
+            .sum()
+        )
 
         fig2 = px.bar(
             cat_df,
@@ -107,28 +107,22 @@ def render():
             y="enrolled_students",
             text="enrolled_students",
         )
-
         fig2.update_layout(
             height=350,
             showlegend=False,
             xaxis_title="Category",
             yaxis_title="Enrollments",
         )
-
         st.plotly_chart(fig2, use_container_width=True)
 
     # ---------- PIE CHART ----------
     with col2:
-
         st.subheader("💰 Revenue Distribution")
 
         rev_df = df.copy()
         rev_df["revenue"] = rev_df["enrolled_students"] * rev_df["price"]
 
-        rev_cat = rev_df.groupby(
-            "category",
-            as_index=False
-        )["revenue"].sum()
+        rev_cat = rev_df.groupby("category", as_index=False)["revenue"].sum()
 
         fig3 = px.pie(
             rev_cat,
@@ -136,9 +130,7 @@ def render():
             values="revenue",
             hole=0.4,
         )
-
         fig3.update_layout(height=350)
-
         st.plotly_chart(fig3, use_container_width=True)
 
     st.divider()
@@ -155,6 +147,3 @@ def render():
         use_container_width=True,
         hide_index=True,
     )
-
-    st.markdown("---")
-    st.caption("© 2026 Learning Platform")
