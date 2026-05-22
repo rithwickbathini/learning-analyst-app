@@ -52,3 +52,6 @@ def render():
             st.caption(f"📊 Level: {lesson['level']}")
             st.write(lesson["description"])
             st.video(lesson["url"])
+
+            st.markdown("---")
+            st.caption("© 2026 Learning Platform")

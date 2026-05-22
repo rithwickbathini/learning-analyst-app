@@ -96,3 +96,6 @@ def render():
                 st.markdown(f"✅ **Q{i + 1}**: {chosen_text}")
             else:
                 st.markdown(f"❌ **Q{i + 1}**: You chose *{chosen_text}* — correct: **{correct_text}**")
+
+                st.markdown("---")
+                st.caption("© 2026 Learning Platform")

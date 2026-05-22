@@ -24,3 +24,6 @@ def render():
         st.dataframe(users, use_container_width=True, hide_index=True)
     else:
         st.info("No users registered yet.")
+
+        st.markdown("---")
+        st.caption("© 2026 Learning Platform")

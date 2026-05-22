@@ -82,3 +82,5 @@ def render():
         use_container_width=True,
         hide_index=True,
     )
+    st.markdown("---")
+    st.caption("© 2026 Learning Platform")

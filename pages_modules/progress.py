@@ -31,3 +31,6 @@ def render():
                  color="my_progress", color_continuous_scale="Blues", text="my_progress")
     fig.update_layout(yaxis_title="", xaxis_title="Progress (%)", height=350, coloraxis_showscale=False)
     st.plotly_chart(fig, width='stretch')
+
+    st.markdown("---")
+    st.caption("© 2026 Learning Platform")

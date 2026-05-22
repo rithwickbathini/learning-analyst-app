@@ -38,3 +38,5 @@ def render():
         4. Aim for **70%+** to pass each quiz!
         """
     )
+    st.markdown("---")
+    st.caption("© 2026 Learning Platform")
