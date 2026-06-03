@@ -1,5 +1,15 @@
 import bcrypt
 import streamlit as st
+import requests
+from streamlit_lottie import st_lottie
+def load_lottie(url):
+    try:
+        r = requests.get(url)
+        if r.status_code != 200:
+            return None
+        return r.json()
+    except:
+        return None
 
 from utils.db import get_db
 
@@ -141,3 +151,53 @@ def current_email() -> str:
         "user_email",
         ""
     )
+def update_user_name(email: str, new_name: str):
+    """Update the user's display name. Returns (success, message)."""
+    new_name = new_name.strip()
+    if not new_name:
+        return False, "Name cannot be empty."
+
+    db = get_db()
+    if db is None:
+        return False, "Database not configured."
+
+    try:
+        db.table("users").update({"name": new_name}).eq("email", email).execute()
+        st.session_state.user_name = new_name  # Reflect change immediately
+        return True, "Name updated successfully."
+    except Exception:
+        return False, "Could not reach the database. Please try again."
+
+
+def change_password(email: str, current_password: str, new_password: str):
+    """Verify current password, then set a new one. Returns (success, message)."""
+    if not current_password or not new_password:
+        return False, "All fields are required."
+    if len(new_password) < 6:
+        return False, "New password must be at least 6 characters."
+
+    db = get_db()
+    if db is None:
+        return False, "Database not configured."
+
+    # 1) Fetch current hash
+    try:
+        result = db.table("users").select("password_hash").eq("email", email).execute()
+    except Exception:
+        return False, "Could not reach the database. Please try again."
+
+    if not result.data:
+        return False, "Account not found."
+
+    # 2) Verify current password
+    if not _check_password(current_password, result.data[0]["password_hash"]):
+        return False, "Current password is incorrect."
+
+    # 3) Save new hashed password
+    try:
+        db.table("users").update({
+            "password_hash": _hash_password(new_password)
+        }).eq("email", email).execute()
+        return True, "Password changed successfully."
+    except Exception:
+        return False, "Could not reach the database. Please try again."
